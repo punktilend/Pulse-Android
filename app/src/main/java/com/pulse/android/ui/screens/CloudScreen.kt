@@ -54,13 +54,21 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 @Composable
-fun CloudScreen(vm: PlayerViewModel, navController: NavController) {
+fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: String = "Music/") {
     val colors = LocalPulseColors.current
     val isConnected by vm.isConnected.collectAsState()
     val scope = rememberCoroutineScope()
 
-    var currentPrefix by remember { mutableStateOf("Music/") }
-    var breadcrumbs by remember { mutableStateOf(listOf("Music")) }
+    val initialBreadcrumbs = remember(startPrefix) {
+        if (startPrefix == "Music/") listOf("Music")
+        else {
+            val parts = startPrefix.removePrefix("Music/").trimEnd('/').split("/")
+            listOf("Music") + parts.filter { it.isNotEmpty() }
+        }
+    }
+
+    var currentPrefix by remember(startPrefix) { mutableStateOf(startPrefix) }
+    var breadcrumbs by remember(startPrefix) { mutableStateOf(initialBreadcrumbs) }
     var files by remember { mutableStateOf<List<B2File>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var isShuffleLoading by remember { mutableStateOf(false) }

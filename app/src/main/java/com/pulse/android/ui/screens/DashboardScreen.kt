@@ -1,169 +1,140 @@
 package com.pulse.android.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
 import androidx.navigation.NavController
-import com.pulse.android.data.PlayerState
+import coil.compose.SubcomposeAsyncImage
+import com.pulse.android.data.B2File
 import com.pulse.android.ui.theme.LocalPulseColors
-import com.pulse.android.ui.theme.PulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardScreen(vm: PlayerViewModel, navController: NavController) {
     val colors = LocalPulseColors.current
-    val np by vm.nowPlaying.collectAsState()
     val isConnected by vm.isConnected.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    var artists by remember { mutableStateOf<List<B2File>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(isConnected) {
+        if (isConnected && artists.isEmpty()) {
+            scope.launch {
+                isLoading = true
+                loadError = null
+                vm.b2.listFiles("Music/").onSuccess { files ->
+                    artists = files.filter { it.isFolder }
+                }.onFailure {
+                    loadError = it.message
+                }
+                isLoading = false
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.bg)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Pulse", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colors.green)
-            Spacer(Modifier.weight(1f))
-            Icon(
-                imageVector = if (isConnected) Icons.Default.Cloud else Icons.Default.CloudOff,
-                contentDescription = "B2 status",
-                tint = if (isConnected) colors.green else colors.textDim,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = if (isConnected) " Connected" else " Offline",
-                color = if (isConnected) colors.green else colors.textDim,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-
-        // Now Playing card
-        val track = np.track
-        Card(
+        // Header bar
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { navController.navigate("nowplaying") },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.surface),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(colors.greenFaint, RoundedCornerShape(8.dp))
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val artUrl = track?.albumArtUrl
-                    if (artUrl != null) {
-                        SubcomposeAsyncImage(
-                            model = artUrl,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                            error = {
-                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = colors.green, modifier = Modifier.size(28.dp))
-                            }
-                        )
-                    } else {
-                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = colors.green, modifier = Modifier.size(28.dp))
-                    }
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (track != null) "Now Playing" else "Nothing Playing",
-                        color = colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.08.sp
-                    )
-                    Text(
-                        text = track?.title ?: "—",
-                        color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
-                    )
-                    if (track != null) {
-                        Text(text = track.artist, color = colors.textMuted, fontSize = 12.sp)
-                    }
-                }
-                if (np.state == PlayerState.Playing) {
-                    Icon(Icons.Default.GraphicEq, contentDescription = "Playing", tint = colors.green, modifier = Modifier.size(22.dp))
-                }
+            Text(
+                "Artists",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary
+            )
+            if (artists.isNotEmpty()) {
+                Text(
+                    "${artists.size} Artists",
+                    fontSize = 12.sp,
+                    color = colors.textMuted
+                )
             }
         }
 
-        // Stat chips
-        Text("Source", color = colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.08.sp)
-        StatRow(
-            StatCard("B2 Bucket", "aharveyGoogleDriveBackup", Icons.Default.Cloud, colors.green),
-            StatCard("Prefix", "Music/", Icons.Default.MusicNote, colors.textMuted),
-            colors = colors
-        )
+        HorizontalDivider(color = colors.border, thickness = 0.5.dp)
 
-        // Quick links
-        Text("Quick Access", color = colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.08.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            QuickChip("Library",  Modifier.weight(1f), colors) { navController.navigate("library") }
-            QuickChip("Cloud",    Modifier.weight(1f), colors) { navController.navigate("cloud") }
-            QuickChip("Settings", Modifier.weight(1f), colors) { navController.navigate("settings") }
-        }
-    }
-}
-
-data class StatCard(val label: String, val value: String, val icon: ImageVector, val color: Color)
-
-@Composable
-private fun StatRow(vararg cards: StatCard, colors: PulseColors) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        cards.forEach { card ->
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.surface),
+        when {
+            !isConnected -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Not connected to B2", color = colors.textMuted, fontSize = 14.sp)
+            }
+            isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = colors.green, modifier = Modifier.size(32.dp))
+            }
+            loadError != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    "Error: $loadError",
+                    color = Color(0xFFFF6B6B),
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(24.dp)
+                )
+            }
+            else -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 128.dp),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(card.icon, contentDescription = null, tint = card.color, modifier = Modifier.size(16.dp))
-                    Text(card.label, color = colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text(card.value, color = colors.textPrimary, fontSize = 11.sp, maxLines = 2)
+                items(artists) { artist ->
+                    val name = artist.name.removePrefix("Music/").trimEnd('/')
+                    val artUrl = vm.b2.getStreamUrl("${artist.name}artist.jpg")
+                    ArtistCard(
+                        name = name,
+                        artUrl = artUrl,
+                        onClick = {
+                            val encoded = Uri.encode(artist.name)
+                            navController.navigate("cloud_prefix?p=$encoded")
+                        }
+                    )
                 }
             }
         }
@@ -171,14 +142,47 @@ private fun StatRow(vararg cards: StatCard, colors: PulseColors) {
 }
 
 @Composable
-private fun QuickChip(label: String, modifier: Modifier = Modifier, colors: PulseColors, onClick: () -> Unit) {
-    Box(
-        modifier = modifier
-            .background(colors.surface2, RoundedCornerShape(8.dp))
+private fun ArtistCard(name: String, artUrl: String, onClick: () -> Unit) {
+    val colors = LocalPulseColors.current
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(label, color = colors.green, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .background(colors.surface, RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            SubcomposeAsyncImage(
+                model = artUrl,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                error = {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = colors.textDim,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            )
+        }
+        Text(
+            text = name,
+            color = colors.textPrimary,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
