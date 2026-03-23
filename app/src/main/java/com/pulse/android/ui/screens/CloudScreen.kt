@@ -103,7 +103,8 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
         )
     }
 
-    val trackFiles = files.filter { !it.isFolder }
+    val audioExtensions = setOf("mp3", "flac", "aac", "ogg", "wav", "m4a", "opus", "wma")
+    val trackFiles = files.filter { !it.isFolder && it.name.substringAfterLast(".").lowercase() in audioExtensions }
     val folderFiles = files.filter { it.isFolder }
 
     Column(
