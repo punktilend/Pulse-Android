@@ -13,22 +13,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.pulse.android.ui.theme.PulseBg
-import com.pulse.android.ui.theme.PulseTextMuted
+import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
 
 @Composable
 fun LibraryScreen(vm: PlayerViewModel, navController: NavController) {
+    val colors = LocalPulseColors.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PulseBg)
+            .background(colors.bg)
             .padding(20.dp)
     ) {
-        Text("Library", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
-        // TODO: browse artists / albums loaded from B2
+        Text("Library", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Browse your B2 music library here.", color = PulseTextMuted, fontSize = 14.sp)
+            Text("Local device music — coming soon. Use Cloud to stream from Backblaze B2.", color = colors.textMuted, fontSize = 14.sp)
         }
     }
 }
