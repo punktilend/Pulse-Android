@@ -104,8 +104,13 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
     }
 
     val audioExtensions = setOf("mp3", "flac", "aac", "ogg", "wav", "m4a", "opus", "wma")
+    val artworkFolderNames = setOf("artwork", "scans", "covers", "images", "art", "booklet", "extras")
     val trackFiles = files.filter { !it.isFolder && it.name.substringAfterLast(".").lowercase() in audioExtensions }
-    val folderFiles = files.filter { it.isFolder }
+    val folderFiles = files.filter { it.isFolder }.filterNot { f ->
+        val folderName = f.name.trimEnd('/').substringAfterLast("/").lowercase()
+        artworkFolderNames.any { folderName.contains(it) }
+    }
+    val coverArtUrl = vm.b2.getStreamUrl("${currentPrefix}cover.jpg")
 
     Column(
         modifier = Modifier.fillMaxSize().background(colors.bg)
@@ -294,7 +299,23 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Default.AudioFile, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(18.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(colors.surface, RoundedCornerShape(4.dp))
+                                    .clip(RoundedCornerShape(4.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                SubcomposeAsyncImage(
+                                    model = coverArtUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                    error = {
+                                        Icon(Icons.Default.AudioFile, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(18.dp))
+                                    }
+                                )
+                            }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     cleanTitle(name.substringBeforeLast(".")),
