@@ -128,16 +128,22 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 breadcrumbs.forEachIndexed { idx, crumb ->
+                    val label = if (idx == 0) "Artists" else crumb
                     Text(
-                        text = crumb,
+                        text = label,
                         color = if (idx == breadcrumbs.lastIndex) colors.green else colors.textDim,
                         fontSize = 13.sp,
                         fontWeight = if (idx == breadcrumbs.lastIndex) FontWeight.SemiBold else FontWeight.Normal,
                         modifier = Modifier.clickable {
-                            if (idx < breadcrumbs.lastIndex) {
+                            if (idx == 0) {
+                                navController.navigate("artists") {
+                                    popUpTo("artists") { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (idx < breadcrumbs.lastIndex) {
                                 val newCrumbs = breadcrumbs.take(idx + 1)
                                 breadcrumbs = newCrumbs
-                                currentPrefix = if (idx == 0) "Music/" else "Music/" + newCrumbs.drop(1).joinToString("/") + "/"
+                                currentPrefix = "Music/" + newCrumbs.drop(1).joinToString("/") + "/"
                                 loadPrefix(currentPrefix)
                             }
                         }
