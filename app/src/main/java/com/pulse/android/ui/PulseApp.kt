@@ -42,6 +42,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pulse.android.ui.components.NowPlayingBar
+import com.pulse.android.ui.screens.AlbumsScreen
 import com.pulse.android.ui.screens.CloudScreen
 import com.pulse.android.ui.screens.DashboardScreen
 import com.pulse.android.ui.screens.NowPlayingScreen
@@ -110,8 +111,7 @@ fun PulseApp() {
                             DashboardScreen(vm = vm, navController = navController)
                         }
                         composable(Screen.Albums.route) {
-                            // Albums navigates into Cloud at Music/ root for now
-                            CloudScreen(vm = vm, navController = navController, startPrefix = "Music/")
+                            AlbumsScreen(vm = vm, navController = navController)
                         }
                         composable(Screen.Cloud.route) {
                             CloudScreen(vm = vm, navController = navController, startPrefix = "Music/")
