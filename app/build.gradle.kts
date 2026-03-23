@@ -1,7 +1,14 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+}
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
 }
 
 android {
@@ -14,6 +21,11 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "B2_KEY_ID",  "\"${localProps["b2.keyId"]}\"")
+        buildConfigField("String", "B2_APP_KEY", "\"${localProps["b2.appKey"]}\"")
+        buildConfigField("String", "B2_BUCKET",  "\"${localProps["b2.bucket"]}\"")
+        buildConfigField("String", "B2_PREFIX",  "\"${localProps["b2.prefix"]}\"")
     }
 
     buildTypes {
@@ -29,7 +41,7 @@ android {
     }
     kotlinOptions { jvmTarget = "11" }
 
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 }
 
 dependencies {

@@ -25,10 +25,10 @@ data class Artist(
 )
 
 data class B2Config(
-    val keyId: String  = "0055a9c537f296d000000000d",
-    val appKey: String = "K005VSqefUNvhByF8qlJiokNLAGIBm0",
-    val bucket: String = "aharveyGoogleDriveBackup",
-    val prefix: String = "Music/",
+    val keyId: String  = com.pulse.android.BuildConfig.B2_KEY_ID,
+    val appKey: String = com.pulse.android.BuildConfig.B2_APP_KEY,
+    val bucket: String = com.pulse.android.BuildConfig.B2_BUCKET,
+    val prefix: String = com.pulse.android.BuildConfig.B2_PREFIX,
 )
 
 sealed class PlayerState {
