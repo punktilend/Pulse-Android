@@ -93,8 +93,6 @@ fun SettingsScreen(vm: PlayerViewModel) {
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Backblaze B2 Source", color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                SettingRow("Bucket", "aharveyGoogleDriveBackup", colors)
-                SettingRow("Prefix", "Music/", colors)
                 SettingRow("Status", if (isConnected) "Connected" else "Disconnected", colors)
                 if (error != null) {
                     Text(error!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
