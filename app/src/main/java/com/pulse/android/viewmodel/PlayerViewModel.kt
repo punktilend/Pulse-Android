@@ -12,6 +12,7 @@ import com.pulse.android.data.B2Config
 import com.pulse.android.data.B2Repository
 import com.pulse.android.data.NowPlaying
 import com.pulse.android.data.PlayerState
+import com.pulse.android.data.StreamQuality
 import com.pulse.android.data.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,16 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         val new = !_isDarkTheme.value
         _isDarkTheme.value = new
         prefs.edit().putBoolean("dark_theme", new).apply()
+    }
+
+    private val _streamQuality = MutableStateFlow(
+        StreamQuality.valueOf(prefs.getString("stream_quality", StreamQuality.FLAC.name) ?: StreamQuality.FLAC.name)
+    )
+    val streamQuality: StateFlow<StreamQuality> = _streamQuality.asStateFlow()
+
+    fun setStreamQuality(quality: StreamQuality) {
+        _streamQuality.value = quality
+        prefs.edit().putString("stream_quality", quality.name).apply()
     }
 
     private val _nowPlaying = MutableStateFlow(NowPlaying())
@@ -79,9 +90,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun playTrack(track: Track, queue: List<Track> = listOf(track), queueIndex: Int = 0) {
         _nowPlaying.update { it.copy(track = track, queue = queue, queueIndex = queueIndex, state = PlayerState.Loading) }
-        val uri = android.net.Uri.parse(track.streamUrl)
+        val quality = _streamQuality.value
+        val url = if (quality == StreamQuality.FLAC || track.filePath.isEmpty()) {
+            track.streamUrl
+        } else {
+            b2.getProxyStreamUrl(track.filePath, quality.param)
+        }
         val item = MediaItem.Builder()
-            .setUri(uri)
+            .setUri(android.net.Uri.parse(url))
             .setMediaId(track.id)
             .build()
         player.setMediaItem(item)

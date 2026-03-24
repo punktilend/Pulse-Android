@@ -1,6 +1,7 @@
 package com.pulse.android.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pulse.android.data.StreamQuality
 import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
 
@@ -37,6 +39,7 @@ fun SettingsScreen(vm: PlayerViewModel) {
     val isConnected by vm.isConnected.collectAsState()
     val error by vm.error.collectAsState()
     val isDark by vm.isDarkTheme.collectAsState()
+    val streamQuality by vm.streamQuality.collectAsState()
 
     Column(
         modifier = Modifier
@@ -83,6 +86,32 @@ fun SettingsScreen(vm: PlayerViewModel) {
                         uncheckedTrackColor = colors.surface2,
                     )
                 )
+            }
+        }
+
+        // Stream quality
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = colors.surface)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Stream Quality", color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("FLAC streams direct from B2. Other qualities transcode via proxy.", color = colors.textMuted, fontSize = 11.sp)
+                StreamQuality.entries.forEach { quality ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { vm.setStreamQuality(quality) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(quality.label, color = if (quality == streamQuality) colors.green else colors.textDim, fontSize = 13.sp)
+                        if (quality == streamQuality) {
+                            Text("✓", color = colors.green, fontSize = 13.sp)
+                        }
+                    }
+                }
             }
         }
 

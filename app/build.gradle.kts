@@ -26,6 +26,7 @@ android {
         buildConfigField("String", "B2_APP_KEY", "\"${localProps["b2.appKey"]}\"")
         buildConfigField("String", "B2_BUCKET",  "\"${localProps["b2.bucket"]}\"")
         buildConfigField("String", "B2_PREFIX",  "\"${localProps["b2.prefix"]}\"")
+        buildConfigField("String", "PROXY_URL",  "\"${localProps["proxy.url"] ?: ""}\"")
     }
 
     buildTypes {

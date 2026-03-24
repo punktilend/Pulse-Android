@@ -1,5 +1,12 @@
 package com.pulse.android.data
 
+enum class StreamQuality(val label: String, val param: String) {
+    FLAC("FLAC (Direct)", "flac"),
+    HIGH("High · 320k MP3", "high"),
+    MEDIUM("Medium · 192k MP3", "medium"),
+    LOW("Low · 128k AAC", "low"),
+}
+
 data class Track(
     val id: String,
     val title: String,
@@ -8,6 +15,7 @@ data class Track(
     val duration: Long,       // ms
     val format: String,
     val streamUrl: String,
+    val filePath: String = "",  // raw B2 path for proxy streaming
     val albumArtUrl: String? = null,
     val trackNumber: Int = 0,
 )

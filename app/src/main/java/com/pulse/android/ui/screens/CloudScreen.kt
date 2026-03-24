@@ -99,6 +99,7 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
             duration = 0L,
             format = fileName.substringAfterLast(".").uppercase(),
             streamUrl = vm.b2.getStreamUrl(f.name),
+            filePath = f.name,
             albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
         )
     }

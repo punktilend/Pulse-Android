@@ -165,6 +165,11 @@ class B2Repository(private val config: B2Config = B2Config()) {
         return "$base?Authorization=${URLEncoder.encode(token, "UTF-8")}"
     }
 
+    fun getProxyStreamUrl(filePath: String, quality: String): String {
+        val encoded = filePath.split("/").joinToString("/") { URLEncoder.encode(it, "UTF-8").replace("+", "%20") }
+        return "${com.pulse.android.BuildConfig.PROXY_URL}/stream?file=$encoded&quality=$quality"
+    }
+
     fun getAuthToken() = authToken
 
     // -------------------------------------------------------
