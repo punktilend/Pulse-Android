@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shuffle
@@ -87,22 +89,8 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
         if (isConnected) loadPrefix(currentPrefix)
     }
 
-    fun makeTrack(f: B2File): Track {
-        val name = f.name.removePrefix(currentPrefix).trimEnd('/')
-        val fileName = name.substringAfterLast("/")
-        val albumFolder = f.name.substringBeforeLast("/")
-        return Track(
-            id = UUID.randomUUID().toString(),
-            title = cleanTitle(fileName.substringBeforeLast(".")),
-            artist = breadcrumbs.getOrNull(1) ?: "Unknown",
-            album = breadcrumbs.lastOrNull() ?: "",
-            duration = 0L,
-            format = fileName.substringAfterLast(".").uppercase(),
-            streamUrl = vm.b2.getStreamUrl(f.name),
-            filePath = f.name,
-            albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
-        )
-    }
+
+    val favorites by vm.favorites.collectAsState()
 
     val audioExtensions = setOf("mp3", "flac", "aac", "ogg", "wav", "m4a", "opus", "wma")
     val artworkFolderNames = setOf("artwork", "scans", "covers", "images", "art", "booklet", "extras")
@@ -112,6 +100,7 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
         artworkFolderNames.any { folderName.contains(it) }
     }
     val coverArtUrl = vm.b2.getStreamUrl("${currentPrefix}cover.jpg")
+    val tracks = remember(trackFiles, currentPrefix, breadcrumbs) { trackFiles.map { makeTrack(it, currentPrefix, breadcrumbs, vm) } }
 
     Column(
         modifier = Modifier.fillMaxSize().background(colors.bg)
@@ -194,6 +183,7 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
                                                 duration = 0L,
                                                 format = fileName.substringAfterLast(".").uppercase(),
                                                 streamUrl = vm.b2.getStreamUrl(f.name),
+                                                filePath = f.name,
                                                 albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
                                             )
                                         }.shuffled()
@@ -298,8 +288,7 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    val queue = trackFiles.map { makeTrack(it) }
-                                    vm.playTrack(queue[idx], queue, idx)
+                                    vm.playTrack(tracks[idx], tracks, idx)
                                     navController.navigate("nowplaying")
                                 }
                                 .padding(horizontal = 20.dp, vertical = 10.dp),
@@ -347,6 +336,18 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
                             if (file.size > 0) {
                                 Text(formatSize(file.size), color = colors.textDim, fontSize = 11.sp)
                             }
+                            val isFav = favorites.any { it.filePath == file.name }
+                            IconButton(
+                                onClick = { vm.toggleFavorite(tracks[idx]) },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = if (isFav) "Remove favorite" else "Add favorite",
+                                    tint = if (isFav) Color(0xFFEF4444) else colors.textDim,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                         HorizontalDivider(color = colors.border, thickness = 0.5.dp)
                     }
@@ -354,6 +355,23 @@ fun CloudScreen(vm: PlayerViewModel, navController: NavController, startPrefix: 
             }
         }
     }
+}
+
+private fun makeTrack(f: B2File, currentPrefix: String, breadcrumbs: List<String>, vm: PlayerViewModel): Track {
+    val name = f.name.removePrefix(currentPrefix).trimEnd('/')
+    val fileName = name.substringAfterLast("/")
+    val albumFolder = f.name.substringBeforeLast("/")
+    return Track(
+        id = UUID.randomUUID().toString(),
+        title = cleanTitle(fileName.substringBeforeLast(".")),
+        artist = breadcrumbs.getOrNull(1) ?: "Unknown",
+        album = breadcrumbs.lastOrNull() ?: "",
+        duration = 0L,
+        format = fileName.substringAfterLast(".").uppercase(),
+        streamUrl = vm.b2.getStreamUrl(f.name),
+        filePath = f.name,
+        albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
+    )
 }
 
 private fun cleanTitle(raw: String): String =

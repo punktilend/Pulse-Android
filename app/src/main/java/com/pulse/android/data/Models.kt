@@ -54,3 +54,12 @@ data class NowPlaying(
     val queue: List<Track> = emptyList(),
     val queueIndex: Int = 0,
 )
+
+data class Favorite(
+    val filePath: String,
+    val title: String,
+    val artist: String,
+    val album: String,
+    val format: String,
+    val addedAt: String = "",
+)

@@ -14,9 +14,7 @@ import java.net.URLEncoder
  * Talks to the Backblaze B2 API to list and stream music files
  * from the aharveyGoogleDriveBackup bucket (Music/ prefix).
  */
-class B2Repository(private val config: B2Config = B2Config()) {
-
-    private val client = OkHttpClient()
+class B2Repository(private val config: B2Config = B2Config(), private val client: OkHttpClient = OkHttpClient()) {
 
     private var authToken: String? = null
     private var accountId: String? = null

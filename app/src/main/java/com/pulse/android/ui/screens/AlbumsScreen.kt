@@ -18,16 +18,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,11 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
+import com.pulse.android.data.Track
 import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 private data class AlbumEntry(
     val name: String,
@@ -58,10 +67,12 @@ private val artworkFolderNames = setOf("artwork", "scans", "covers", "images", "
 fun AlbumsScreen(vm: PlayerViewModel, navController: NavController) {
     val colors = LocalPulseColors.current
     val isConnected by vm.isConnected.collectAsState()
+    val scope = rememberCoroutineScope()
 
     var albums by remember { mutableStateOf<List<AlbumEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var isShuffleLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(isConnected) {
         if (isConnected && albums.isEmpty()) {
@@ -121,6 +132,52 @@ fun AlbumsScreen(vm: PlayerViewModel, navController: NavController) {
             Text("Albums", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
             if (albums.isNotEmpty()) {
                 Text("${albums.size} Albums", fontSize = 12.sp, color = colors.textMuted)
+            }
+            Spacer(Modifier.weight(1f))
+            Button(
+                onClick = {
+                    scope.launch {
+                        isShuffleLoading = true
+                        vm.b2.listAllFiles("Music/").onSuccess { allFiles ->
+                            val queue = allFiles.map { f ->
+                                val fileName = f.name.substringAfterLast("/")
+                                val albumFolder = f.name.substringBeforeLast("/")
+                                val parts = f.name.removePrefix("Music/").split("/")
+                                Track(
+                                    id = UUID.randomUUID().toString(),
+                                    title = fileName.substringBeforeLast(".").replace(Regex("^\\d+[.\\-\\s]+"), "").trim(),
+                                    artist = if (parts.size > 1) parts[0] else "Unknown",
+                                    album = if (parts.size > 2) parts[1] else "",
+                                    duration = 0L,
+                                    format = fileName.substringAfterLast(".").uppercase(),
+                                    streamUrl = vm.b2.getStreamUrl(f.name),
+                                    filePath = f.name,
+                                    albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
+                                )
+                            }.shuffled()
+                            if (queue.isNotEmpty()) {
+                                vm.playTrack(queue[0], queue, 0)
+                                navController.navigate("nowplaying")
+                            }
+                        }
+                        isShuffleLoading = false
+                    }
+                },
+                enabled = albums.isNotEmpty() && !isShuffleLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.greenDim,
+                    contentColor = colors.green,
+                ),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                if (isShuffleLoading) {
+                    CircularProgressIndicator(color = colors.green, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Shuffle All", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
 

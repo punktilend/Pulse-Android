@@ -4,12 +4,17 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
 import com.pulse.android.data.B2Config
 import com.pulse.android.data.B2Repository
+import com.pulse.android.data.Favorite
+import com.pulse.android.data.FavoritesRepository
 import com.pulse.android.data.NowPlaying
 import com.pulse.android.data.PlayerState
 import com.pulse.android.data.StreamQuality
@@ -19,10 +24,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
 
-    val b2 = B2Repository(B2Config())
+    private val httpClient = OkHttpClient()
+    val b2 = B2Repository(B2Config(), httpClient)
+    private val favRepo = FavoritesRepository(client = httpClient)
+
+    private val _favorites = MutableStateFlow<List<Favorite>>(emptyList())
+    val favorites: StateFlow<List<Favorite>> = _favorites.asStateFlow()
 
     private val prefs = application.getSharedPreferences("pulse_prefs", Context.MODE_PRIVATE)
     private val _isDarkTheme = MutableStateFlow(prefs.getBoolean("dark_theme", true))
@@ -56,24 +67,63 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val _shuffleMode = MutableStateFlow(false)
     val shuffleMode: StateFlow<Boolean> = _shuffleMode.asStateFlow()
 
-    private val player: ExoPlayer = ExoPlayer.Builder(application).build().apply {
-        addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                _nowPlaying.update { it.copy(state = if (isPlaying) PlayerState.Playing else PlayerState.Paused) }
-            }
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) skipNext()
-            }
-            override fun onPlayerError(error: PlaybackException) {
-                _error.value = "Playback error: ${error.message}"
-                _nowPlaying.update { it.copy(state = PlayerState.Error(error.message ?: "Unknown error")) }
-            }
-        })
-    }
+    private val player: ExoPlayer = ExoPlayer.Builder(application)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                .setUsage(C.USAGE_MEDIA)
+                .build(),
+            /* handleAudioFocus= */ true
+        )
+        .setHandleAudioBecomingNoisy(true)
+        .build()
+        .apply {
+            addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    _nowPlaying.update { it.copy(state = if (isPlaying) PlayerState.Playing else PlayerState.Paused) }
+                }
+                // ExoPlayer handles mid-queue transitions automatically; we just sync state.
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    val idx = currentMediaItemIndex
+                    val queue = _nowPlaying.value.queue
+                    if (idx in queue.indices) {
+                        _nowPlaying.update { it.copy(track = queue[idx], queueIndex = idx) }
+                    }
+                }
+                override fun onPlayerError(error: PlaybackException) {
+                    _error.value = "Playback error: ${error.message}"
+                    _nowPlaying.update { it.copy(state = PlayerState.Error(error.message ?: "Unknown error")) }
+                }
+            })
+        }
+
+    // Exposes the player to the Android media system so car controls (AVRCP),
+    // notification controls, and headset buttons all work.
+    private val mediaSession: MediaSession = MediaSession.Builder(application, player).build()
 
     init {
         connectToB2()
+        loadFavorites()
     }
+
+    fun loadFavorites() {
+        viewModelScope.launch {
+            favRepo.getFavorites().onSuccess { _favorites.value = it }
+        }
+    }
+
+    fun toggleFavorite(track: Track) {
+        viewModelScope.launch {
+            val isFav = _favorites.value.any { it.filePath == track.filePath }
+            if (isFav) {
+                favRepo.removeFavorite(track.filePath).onSuccess { _favorites.value = it }
+            } else {
+                favRepo.addFavorite(track).onSuccess { _favorites.value = it }
+            }
+        }
+    }
+
+    fun isFavorite(filePath: String) = _favorites.value.any { it.filePath == filePath }
 
     fun connectToB2() {
         viewModelScope.launch {
@@ -91,16 +141,19 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun playTrack(track: Track, queue: List<Track> = listOf(track), queueIndex: Int = 0) {
         _nowPlaying.update { it.copy(track = track, queue = queue, queueIndex = queueIndex, state = PlayerState.Loading) }
         val quality = _streamQuality.value
-        val url = if (quality == StreamQuality.FLAC || track.filePath.isEmpty()) {
-            track.streamUrl
-        } else {
-            b2.getProxyStreamUrl(track.filePath, quality.param)
+        // Load the entire queue into ExoPlayer so native skip (including car controls) works.
+        val mediaItems = queue.map { t ->
+            val url = if (quality == StreamQuality.FLAC || t.filePath.isEmpty()) {
+                t.streamUrl
+            } else {
+                b2.getProxyStreamUrl(t.filePath, quality.param)
+            }
+            MediaItem.Builder()
+                .setUri(android.net.Uri.parse(url))
+                .setMediaId(t.id)
+                .build()
         }
-        val item = MediaItem.Builder()
-            .setUri(android.net.Uri.parse(url))
-            .setMediaId(track.id)
-            .build()
-        player.setMediaItem(item)
+        player.setMediaItems(mediaItems, queueIndex, /* startPositionMs= */ 0L)
         player.prepare()
         player.play()
     }
@@ -109,31 +162,22 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         if (player.isPlaying) player.pause() else player.play()
     }
 
-    fun toggleShuffle() { _shuffleMode.update { !it } }
+    fun toggleShuffle() {
+        val new = !_shuffleMode.value
+        _shuffleMode.value = new
+        player.shuffleModeEnabled = new
+    }
 
     fun skipNext() {
-        val np = _nowPlaying.value
-        if (_shuffleMode.value && np.queue.size > 1) {
-            val nextIndex = (np.queue.indices - np.queueIndex).random()
-            playTrack(np.queue[nextIndex], np.queue, nextIndex)
-        } else {
-            val nextIndex = np.queueIndex + 1
-            if (nextIndex < np.queue.size) {
-                playTrack(np.queue[nextIndex], np.queue, nextIndex)
-            }
-        }
+        if (player.hasNextMediaItem()) player.seekToNextMediaItem()
     }
 
     fun skipPrev() {
-        val np = _nowPlaying.value
         if (player.currentPosition > 3000) {
             player.seekTo(0)
             return
         }
-        val prevIndex = np.queueIndex - 1
-        if (prevIndex >= 0) {
-            playTrack(np.queue[prevIndex], np.queue, prevIndex)
-        }
+        if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
     }
 
     fun seekTo(ms: Long) = player.seekTo(ms)
@@ -144,7 +188,10 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun clearError() { _error.value = null }
 
     override fun onCleared() {
+        mediaSession.release()
         player.release()
+        httpClient.dispatcher.executorService.shutdown()
+        httpClient.connectionPool.evictAll()
         super.onCleared()
     }
 }

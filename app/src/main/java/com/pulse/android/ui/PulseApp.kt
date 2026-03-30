@@ -1,5 +1,6 @@
 package com.pulse.android.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
@@ -29,7 +32,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,20 +50,23 @@ import com.pulse.android.ui.components.NowPlayingBar
 import com.pulse.android.ui.screens.AlbumsScreen
 import com.pulse.android.ui.screens.CloudScreen
 import com.pulse.android.ui.screens.DashboardScreen
+import com.pulse.android.ui.screens.FavoritesScreen
 import com.pulse.android.ui.screens.NowPlayingScreen
 import com.pulse.android.ui.screens.SettingsScreen
 import com.pulse.android.ui.theme.DarkPulseColors
 import com.pulse.android.ui.theme.LightPulseColors
 import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.ui.theme.PulseColors
+import com.pulse.android.R
 import com.pulse.android.ui.theme.PulseTheme
 import com.pulse.android.viewmodel.PlayerViewModel
 
 sealed class Screen(val route: String) {
-    object Artists  : Screen("artists")
-    object Albums   : Screen("albums")
-    object Cloud    : Screen("cloud")
-    object Settings : Screen("settings")
+    object Artists   : Screen("artists")
+    object Albums    : Screen("albums")
+    object Favorites : Screen("favorites")
+    object Cloud     : Screen("cloud")
+    object Settings  : Screen("settings")
 }
 
 @Composable
@@ -113,6 +121,9 @@ fun PulseApp() {
                         composable(Screen.Albums.route) {
                             AlbumsScreen(vm = vm, navController = navController)
                         }
+                        composable(Screen.Favorites.route) {
+                            FavoritesScreen(vm = vm, navController = navController)
+                        }
                         composable(Screen.Cloud.route) {
                             CloudScreen(vm = vm, navController = navController, startPrefix = "Music/")
                         }
@@ -151,19 +162,31 @@ private fun PulseSidebar(
 ) {
     Column(
         modifier = Modifier
-            .width(180.dp)
+            .width(255.dp)
             .fillMaxHeight()
             .background(colors.surface)
             .padding(vertical = 12.dp)
     ) {
-        // App name
-        Text(
-            "Pulse",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = colors.green,
+        // Logo + app name
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_logo),
+                contentDescription = "AtomicBlast logo",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            Text(
+                "AtomicBlast",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.green,
+            )
+        }
 
         Spacer(Modifier.height(4.dp))
 
@@ -187,6 +210,17 @@ private fun PulseSidebar(
             colors = colors,
         ) {
             navController.navigate(Screen.Albums.route) {
+                popUpTo(Screen.Artists.route) { inclusive = false }
+                launchSingleTop = true
+            }
+        }
+        SidebarItem(
+            label = "Favorites",
+            icon = Icons.Default.Favorite,
+            selected = currentRoute == Screen.Favorites.route,
+            colors = colors,
+        ) {
+            navController.navigate(Screen.Favorites.route) {
                 popUpTo(Screen.Artists.route) { inclusive = false }
                 launchSingleTop = true
             }
@@ -241,11 +275,11 @@ private fun PulseSidebar(
 private fun SidebarSectionLabel(text: String, colors: PulseColors) {
     Text(
         text = text,
-        fontSize = 9.sp,
+        fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
         color = colors.textDim,
         letterSpacing = 0.8.sp,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
     )
 }
 
@@ -259,25 +293,26 @@ private fun SidebarItem(
 ) {
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .then(
                 if (selected) Modifier.background(colors.greenDim, RoundedCornerShape(6.dp))
                 else Modifier
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 7.dp),
+            .padding(start = 14.dp, end = 8.dp, top = 11.dp, bottom = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = if (selected) colors.green else colors.textMuted,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(20.dp)
         )
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) colors.green else colors.textMuted,
         )

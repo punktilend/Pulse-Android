@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: hex + EQ bars scaled to fit the 72dp safe zone
+     centred in the 108dp canvas. Group transform: scale 0.38 around the original
+     centroid (200, 170), then translate to canvas centre (54, 54). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:pivotX="200"
+        android:pivotY="170"
+        android:scaleX="0.38"
+        android:scaleY="0.38"
+        android:translateX="-146"
+        android:translateY="-116">
+
+        <!-- Outer glow ring -->
+        <path
+            android:pathData="M112,170 A88,88 0 1,0 288,170 A88,88 0 1,0 112,170 Z"
+            android:fillColor="#00000000"
+            android:strokeColor="#4ade80"
+            android:strokeWidth="4"
+            android:strokeAlpha="0.2"/>
+
+        <!-- Hex shield -->
+        <path
+            android:pathData="M200,80 L272,124 L272,216 L200,260 L128,216 L128,124 Z"
+            android:fillColor="#0a180a"
+            android:strokeColor="#4ade80"
+            android:strokeWidth="6"/>
+
+        <!-- EQ bars -->
+        <path android:pathData="M152,185 H156 A4,4 0 0 1 160,189 V211 A4,4 0 0 1 156,215 H152 A4,4 0 0 1 148,211 V189 A4,4 0 0 1 152,185 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M170,150 H174 A4,4 0 0 1 178,154 V211 A4,4 0 0 1 174,215 H170 A4,4 0 0 1 166,211 V154 A4,4 0 0 1 170,150 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M188,162 H192 A4,4 0 0 1 196,166 V211 A4,4 0 0 1 192,215 H188 A4,4 0 0 1 184,211 V166 A4,4 0 0 1 188,162 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M206,140 H210 A4,4 0 0 1 214,144 V211 A4,4 0 0 1 210,215 H206 A4,4 0 0 1 202,211 V144 A4,4 0 0 1 206,140 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M224,158 H228 A4,4 0 0 1 232,162 V211 A4,4 0 0 1 228,215 H224 A4,4 0 0 1 220,211 V162 A4,4 0 0 1 224,158 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M242,178 H246 A4,4 0 0 1 250,182 V211 A4,4 0 0 1 246,215 H242 A4,4 0 0 1 238,211 V182 A4,4 0 0 1 242,178 Z" android:fillColor="#4ade80"/>
+
+        <!-- Hex corner dots -->
+        <path android:pathData="M197,84 A3,3 0 1,0 203,84 A3,3 0 1,0 197,84 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M267,126 A3,3 0 1,0 273,126 A3,3 0 1,0 267,126 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+        <path android:pathData="M267,214 A3,3 0 1,0 273,214 A3,3 0 1,0 267,214 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+        <path android:pathData="M197,256 A3,3 0 1,0 203,256 A3,3 0 1,0 197,256 Z" android:fillColor="#4ade80"/>
+        <path android:pathData="M127,214 A3,3 0 1,0 133,214 A3,3 0 1,0 127,214 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+        <path android:pathData="M127,126 A3,3 0 1,0 133,126 A3,3 0 1,0 127,126 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+
+    </group>
+
+</vector>

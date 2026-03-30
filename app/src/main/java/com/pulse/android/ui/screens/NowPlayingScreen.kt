@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PauseCircleFilled
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.pulse.android.data.PlayerState
+import com.pulse.android.data.Track
 import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
 import kotlinx.coroutines.delay
@@ -65,6 +68,7 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
     val colors = LocalPulseColors.current
     val np by vm.nowPlaying.collectAsState()
     val shuffleMode by vm.shuffleMode.collectAsState()
+    val favorites by vm.favorites.collectAsState()
     val track = np.track
 
     var positionMs by remember { mutableLongStateOf(0L) }
@@ -90,13 +94,14 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             Text(
                 "Queue",
                 color = colors.textPrimary,
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
             )
             LazyColumn {
                 itemsIndexed(np.queue) { idx, t ->
                     val isCurrent = t.id == track?.id
+                    val isFav = favorites.any { it.filePath == t.filePath }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -105,25 +110,36 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
                                 showQueue = false
                             }
                             .background(if (isCurrent) colors.greenFaint else Color.Transparent)
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                            .padding(horizontal = 24.dp, vertical = 18.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         if (isCurrent) {
-                            Icon(Icons.Default.GraphicEq, null, tint = colors.green, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.GraphicEq, null, tint = colors.green, modifier = Modifier.size(22.dp))
                         } else {
-                            Text("${idx + 1}", color = colors.textDim, fontSize = 12.sp, modifier = Modifier.size(16.dp))
+                            Text("${idx + 1}", color = colors.textDim, fontSize = 16.sp, modifier = Modifier.size(22.dp))
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 t.title,
                                 color = if (isCurrent) colors.green else colors.textPrimary,
-                                fontSize = 14.sp,
+                                fontSize = 19.sp,
                                 fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Text(t.artist, color = colors.textMuted, fontSize = 12.sp, maxLines = 1)
+                            Text(t.artist, color = colors.textMuted, fontSize = 16.sp, maxLines = 1)
+                        }
+                        IconButton(
+                            onClick = { vm.toggleFavorite(t) },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFav) "Remove favorite" else "Add favorite",
+                                tint = if (isFav) Color(0xFFEF4444) else colors.textDim,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                     HorizontalDivider(color = colors.border, thickness = 0.5.dp)
@@ -140,7 +156,7 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             .padding(horizontal = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
 
         // Back button
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -149,12 +165,12 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(8.dp))
 
         // Album art — tap to open queue
         Box(
             modifier = Modifier
-                .size(240.dp)
+                .size(200.dp)
                 .background(colors.greenFaint, RoundedCornerShape(16.dp))
                 .clip(RoundedCornerShape(16.dp))
                 .clickable(enabled = np.queue.isNotEmpty()) { showQueue = true },
@@ -183,7 +199,7 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(20.dp))
 
         // Track info
         Text(
@@ -194,7 +210,7 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = track?.artist ?: "—",
             color = colors.textMuted,
@@ -210,7 +226,7 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(20.dp))
 
         // Seek bar
         val sliderValue = if (isSeeking >= 0) isSeeking else if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -239,9 +255,9 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             Text(formatMs(durationMs), color = colors.textDim, fontSize = 11.sp)
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Controls: Shuffle | Prev | Play/Pause | Next
+        // Controls: Shuffle | Prev | Play/Pause | Next | Heart
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -272,7 +288,21 @@ fun NowPlayingScreen(vm: PlayerViewModel, onBack: () -> Unit) {
             IconButton(onClick = { vm.skipNext() }, modifier = Modifier.size(56.dp)) {
                 Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = colors.textMuted, modifier = Modifier.size(36.dp))
             }
+            val isFav = track != null && favorites.any { it.filePath == track.filePath }
+            IconButton(
+                onClick = { track?.let { vm.toggleFavorite(it) } },
+                modifier = Modifier.size(44.dp),
+                enabled = track != null
+            ) {
+                Icon(
+                    if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isFav) "Remove favorite" else "Add favorite",
+                    tint = if (isFav) Color(0xFFEF4444) else colors.textMuted,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
+        Spacer(Modifier.height(20.dp))
     }
 }
 

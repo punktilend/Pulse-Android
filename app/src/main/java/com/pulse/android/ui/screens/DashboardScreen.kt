@@ -13,12 +13,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,9 +48,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.pulse.android.data.B2File
+import com.pulse.android.data.Track
 import com.pulse.android.ui.theme.LocalPulseColors
 import com.pulse.android.viewmodel.PlayerViewModel
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @Composable
 fun DashboardScreen(vm: PlayerViewModel, navController: NavController) {
@@ -56,6 +63,7 @@ fun DashboardScreen(vm: PlayerViewModel, navController: NavController) {
     var artists by remember { mutableStateOf<List<B2File>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var isShuffleLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(isConnected) {
         if (isConnected && artists.isEmpty()) {
@@ -97,6 +105,52 @@ fun DashboardScreen(vm: PlayerViewModel, navController: NavController) {
                     fontSize = 12.sp,
                     color = colors.textMuted
                 )
+            }
+            Spacer(Modifier.weight(1f))
+            Button(
+                onClick = {
+                    scope.launch {
+                        isShuffleLoading = true
+                        vm.b2.listAllFiles("Music/").onSuccess { allFiles ->
+                            val queue = allFiles.map { f ->
+                                val fileName = f.name.substringAfterLast("/")
+                                val albumFolder = f.name.substringBeforeLast("/")
+                                val parts = f.name.removePrefix("Music/").split("/")
+                                Track(
+                                    id = UUID.randomUUID().toString(),
+                                    title = fileName.substringBeforeLast(".").replace(Regex("^\\d+[.\\-\\s]+"), "").trim(),
+                                    artist = if (parts.size > 1) parts[0] else "Unknown",
+                                    album = if (parts.size > 2) parts[1] else "",
+                                    duration = 0L,
+                                    format = fileName.substringAfterLast(".").uppercase(),
+                                    streamUrl = vm.b2.getStreamUrl(f.name),
+                                    filePath = f.name,
+                                    albumArtUrl = vm.b2.getStreamUrl("$albumFolder/cover.jpg"),
+                                )
+                            }.shuffled()
+                            if (queue.isNotEmpty()) {
+                                vm.playTrack(queue[0], queue, 0)
+                                navController.navigate("nowplaying")
+                            }
+                        }
+                        isShuffleLoading = false
+                    }
+                },
+                enabled = artists.isNotEmpty() && !isShuffleLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.greenDim,
+                    contentColor = colors.green,
+                ),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                if (isShuffleLoading) {
+                    CircularProgressIndicator(color = colors.green, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Shuffle All", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
 

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Converted from pulse-logo.svg (400×400 viewBox). Text and filter effects omitted
+     (not supported in Android Vector Drawable). All other elements faithfully ported. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="400dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- Background -->
+    <path
+        android:pathData="M32,0 H368 A32,32 0 0 1 400,32 V368 A32,32 0 0 1 368,400 H32 A32,32 0 0 1 0,368 V32 A32,32 0 0 1 32,0 Z"
+        android:fillColor="#0f1a0f"/>
+
+    <!-- Subtle grid lines -->
+    <path android:pathData="M0,100 H400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+    <path android:pathData="M0,200 H400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+    <path android:pathData="M0,300 H400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+    <path android:pathData="M100,0 V400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+    <path android:pathData="M200,0 V400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+    <path android:pathData="M300,0 V400" android:strokeColor="#4ade80" android:strokeWidth="1" android:strokeAlpha="0.05" android:fillColor="#00000000"/>
+
+    <!-- Outer glow ring (simplified, no blur filter) -->
+    <path
+        android:pathData="M112,170 A88,88 0 1,0 288,170 A88,88 0 1,0 112,170 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#4ade80"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.15"/>
+
+    <!-- Hex shield -->
+    <path
+        android:pathData="M200,80 L272,124 L272,216 L200,260 L128,216 L128,124 Z"
+        android:fillColor="#0a180a"
+        android:strokeColor="#4ade80"
+        android:strokeWidth="2.5"/>
+
+    <!-- EQ bars (6 rounded rects, all bottom-aligned at y=215) -->
+    <!-- Bar 1: x=148 y=185 w=12 h=30 rx=4 -->
+    <path android:pathData="M152,185 H156 A4,4 0 0 1 160,189 V211 A4,4 0 0 1 156,215 H152 A4,4 0 0 1 148,211 V189 A4,4 0 0 1 152,185 Z" android:fillColor="#4ade80"/>
+    <!-- Bar 2: x=166 y=150 w=12 h=65 rx=4 -->
+    <path android:pathData="M170,150 H174 A4,4 0 0 1 178,154 V211 A4,4 0 0 1 174,215 H170 A4,4 0 0 1 166,211 V154 A4,4 0 0 1 170,150 Z" android:fillColor="#4ade80"/>
+    <!-- Bar 3: x=184 y=162 w=12 h=53 rx=4 -->
+    <path android:pathData="M188,162 H192 A4,4 0 0 1 196,166 V211 A4,4 0 0 1 192,215 H188 A4,4 0 0 1 184,211 V166 A4,4 0 0 1 188,162 Z" android:fillColor="#4ade80"/>
+    <!-- Bar 4: x=202 y=140 w=12 h=75 rx=4 (tallest) -->
+    <path android:pathData="M206,140 H210 A4,4 0 0 1 214,144 V211 A4,4 0 0 1 210,215 H206 A4,4 0 0 1 202,211 V144 A4,4 0 0 1 206,140 Z" android:fillColor="#4ade80"/>
+    <!-- Bar 5: x=220 y=158 w=12 h=57 rx=4 -->
+    <path android:pathData="M224,158 H228 A4,4 0 0 1 232,162 V211 A4,4 0 0 1 228,215 H224 A4,4 0 0 1 220,211 V162 A4,4 0 0 1 224,158 Z" android:fillColor="#4ade80"/>
+    <!-- Bar 6: x=238 y=178 w=12 h=37 rx=4 -->
+    <path android:pathData="M242,178 H246 A4,4 0 0 1 250,182 V211 A4,4 0 0 1 246,215 H242 A4,4 0 0 1 238,211 V182 A4,4 0 0 1 242,178 Z" android:fillColor="#4ade80"/>
+
+    <!-- Hex corner accent dots -->
+    <path android:pathData="M197,84 A3,3 0 1,0 203,84 A3,3 0 1,0 197,84 Z" android:fillColor="#4ade80" android:fillAlpha="0.9"/>
+    <path android:pathData="M267,126 A3,3 0 1,0 273,126 A3,3 0 1,0 267,126 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+    <path android:pathData="M267,214 A3,3 0 1,0 273,214 A3,3 0 1,0 267,214 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+    <path android:pathData="M197,256 A3,3 0 1,0 203,256 A3,3 0 1,0 197,256 Z" android:fillColor="#4ade80" android:fillAlpha="0.9"/>
+    <path android:pathData="M127,214 A3,3 0 1,0 133,214 A3,3 0 1,0 127,214 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+    <path android:pathData="M127,126 A3,3 0 1,0 133,126 A3,3 0 1,0 127,126 Z" android:fillColor="#4ade80" android:fillAlpha="0.7"/>
+
+</vector>
